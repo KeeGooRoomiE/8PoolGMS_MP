@@ -4,7 +4,7 @@
 
 direction = 0;
 speed = 0;
-friction = 0.1;
+friction = 0.38;
 
 depth = -1;
 

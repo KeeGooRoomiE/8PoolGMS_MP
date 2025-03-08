@@ -4,7 +4,7 @@
     "path": "sprites/spr_obs_basic/spr_obs_basic.yy",
   },
   "solid": true,
-  "visible": true,
+  "visible": false,
   "managed": true,
   "spriteMaskId": null,
   "persistent": false,

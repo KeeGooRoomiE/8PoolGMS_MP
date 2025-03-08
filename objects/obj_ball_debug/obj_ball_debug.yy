@@ -1,7 +1,7 @@
 {
   "spriteId": {
-    "name": "spr_ball_basic",
-    "path": "sprites/spr_ball_basic/spr_ball_basic.yy",
+    "name": "spr_ball_high",
+    "path": "sprites/spr_ball_high/spr_ball_high.yy",
   },
   "solid": false,
   "visible": true,
