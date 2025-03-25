@@ -3,8 +3,8 @@
 
 var dir = point_direction(x, y, other.x, other.y);
 
-other.speed = speed*.81;
-speed = speed*.81
+other.speed = speed*.96;
+speed = speed*.76
 other.direction = dir;
 
 var dir_o = point_direction(other.x,other.y,x,y);
