@@ -13,6 +13,8 @@ if (isSelected)
 	    dist = max_force;
 	}
 	
+	global.playerForce = dist;
+	sio_emit_change_kick_force();
 	applyForce(dist, dir);
 	isSelected = false;
 	var log = "UPD Player" +string(global.playerTurn)+ " | DIR: " +string(dir);

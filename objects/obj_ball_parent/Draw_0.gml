@@ -48,10 +48,20 @@ else
 	//var xx = x + lengthdir_x(50+dist, global.playerDirection);
 	//var yy = y + lengthdir_y(50+dist,  global.playerDirection);
 	
-	var _dir = global.playerDirection;
-	var _diff = angle_difference(_dir, lerp_stick_angle);
-	lerp_stick_angle += _diff * 0.1;
-	draw_sprite_ext(spr_stick_pro,0,room_width/2,room_height/2,1,1,lerp_stick_angle,c_white,1);
+	if (global.controllingBall == id)
+	{
+		
+		if (speed == 0)
+		{
+			var _dir = global.playerDirection;
+			var _diff = angle_difference(_dir, lerp_stick_angle);
+			lerp_stick_angle += _diff * 0.1;
+			var xx = x + lengthdir_x(-50, lerp_stick_angle);
+			var yy = y + lengthdir_y(-50, lerp_stick_angle);
+			draw_sprite_ext(spr_stick_pro,0,xx,yy,1,1,lerp_stick_angle,c_white,1);
+		}
+	}
+	
 }
 
 

@@ -12,13 +12,13 @@ function gmcallback_sio_on_players_list() {
     global.playersCount = real(json_data[? "playerCount"]); // Set the player count
 
     // Clear the old player list
-    global.playerList = [];
+    global.playersList = [];
 
     // Update global.playerList with the new player data
     for (var i = 0; i < array_length(players); i++) {
-        global.playerList[i] = players[i].id; // Add player ID to the list
+        global.playersList[i] = players[i].id; // Add player ID to the list
     }
 
     // Log the updated player list
-    add_log("Updated player list: " + string(global.playerList));
+    add_log("Updated player list: " + string(global.playersList));
 }

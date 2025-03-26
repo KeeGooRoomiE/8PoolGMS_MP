@@ -27,6 +27,7 @@ function sio_init() {
     //sio_addEvent("create_ball");     // Добавлено
 	sio_addEvent("change_turn");
 	sio_addEvent("change_dir");
+	sio_addEvent("change_kick_force");
 	sio_addEvent("get_players_list");
     show_debug_message("UPD Socket.io sending events list");
     #endregion

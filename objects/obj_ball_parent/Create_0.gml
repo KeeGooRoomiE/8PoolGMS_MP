@@ -19,3 +19,4 @@ vert_angle = 0;
 lerp_stick_angle = 0;
 
 ballId = 0;
+ballType = 0;	//0 - undef, 1- white, 2 - normal filled, 3 - normal stripped, 4 - black 

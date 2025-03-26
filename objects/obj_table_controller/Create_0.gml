@@ -12,7 +12,9 @@ global.localPlayerId = 0;
 global.playerTurn = 0;
 
 global.playerDirection = 0;
+global.playerForce = 0;
 
+global.controllingBall = 0;
 
 //global.playersList[0]= 0;
 
