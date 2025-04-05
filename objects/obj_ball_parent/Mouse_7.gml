@@ -7,9 +7,11 @@ if (speed == 0)
 	
 	if (global.table.canLocalPlayerMakeMove = true)
 	{
-		isSelected = !isSelected;
-		add_log("BALL SELECTED");
-		//global.playerDirection = dir;
+		if (ballType = 1)
+		{
+			isSelected = !isSelected;
+			add_log("BALL SELECTED");
+		}
 	}
 }
 

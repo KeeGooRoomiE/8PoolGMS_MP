@@ -1,6 +1,7 @@
 {
   "resources": [
     {"id":{"name":"spr_ball_stripe","path":"sprites/spr_ball_stripe/spr_ball_stripe.yy",},"order":13,},
+    {"id":{"name":"obj_ball_white","path":"objects/obj_ball_white/obj_ball_white.yy",},"order":7,},
     {"id":{"name":"gmcallback_sio_on_change_turn","path":"scripts/gmcallback_sio_on_change_turn/gmcallback_sio_on_change_turn.yy",},"order":9,},
     {"id":{"name":"gmcallback_sio_on_position_update","path":"scripts/gmcallback_sio_on_position_update/gmcallback_sio_on_position_update.yy",},"order":8,},
     {"id":{"name":"obj_network_controller","path":"objects/obj_network_controller/obj_network_controller.yy",},"order":4,},

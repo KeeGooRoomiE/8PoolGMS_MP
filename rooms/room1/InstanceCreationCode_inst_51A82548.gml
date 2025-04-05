@@ -1,1 +1,0 @@
-global.controllingBall = id;

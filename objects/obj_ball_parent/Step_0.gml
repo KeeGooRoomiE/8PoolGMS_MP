@@ -1,4 +1,4 @@
-/// @description Insert description here
+/// @description Common behaviour
 // You can write your code in this editor
 
 
@@ -13,6 +13,7 @@ function applyForce(force,dir)
 	}
 }
 
+
 if (isSelected)
 {
 	global.selectedBall = id;
@@ -21,23 +22,30 @@ else
 {
 	global.selectedBall = noone;
 }
-move_wrap(1,1,0);
 
-//image_angle = angular_speed;//angle_difference(image_angle,direction)*angular_speed;
-angular_speed *= (1 - rotation_friction); // Постепенно тормозим вращение
+#region --- Overall ball behaviour
+
+move_wrap(1,1,0); // --- Bring it back in case of OOB
+
+	#region --- Vertical angular rotation 
+
+	angular_speed *= (1 - rotation_friction); // Постепенно тормозим вращение
 
 
-var radius = sprite_width / 2; 
+	var radius = sprite_width / 2; 
+	var rotation_amount = (speed / (2 * radius)) * 360; 
 
-// Рассчитываем пройденное расстояние (по сути, окружность)
-var rotation_amount = (speed / (2 * radius)) * 360; 
+	image_angle += rotation_amount;
+	vert_angle += rotation_amount;
 
-// Применяем вращение
-image_angle += rotation_amount;
-vert_angle += rotation_amount;
+	angular_speed *= angular_friction; 
 
-// Плавное замедление вращения (трение)
-angular_speed *= 0.9; // 0.96 - коэффициент трения, можно настроить под реализм
+	#endregion
+
+#endregion
+
+
+
 
 
 
