@@ -88,19 +88,8 @@ jobs:
           curl -sSL \
             "https://raw.githubusercontent.com/gzuidhof/coi-serviceworker/master/coi-serviceworker.js" \
             -o "${{ env.BUILD_DIR }}/coi-serviceworker.js"
-          # Инжектируем перед </head>
-          python3 - <<'EOF'
-import sys
-path = "${{ env.BUILD_DIR }}/index.html"
-with open(path, "r") as f:
-    html = f.read()
-tag = '<script src="coi-serviceworker.js"></script>'
-if tag not in html:
-    html = html.replace("</head>", tag + "\n</head>", 1)
-with open(path, "w") as f:
-    f.write(html)
-print("coi-serviceworker injected")
-EOF
+          sed -i 's|</head>|<script src="coi-serviceworker.js"></script></head>|' \
+            "${{ env.BUILD_DIR }}/index.html"
 
       # .nojekyll — без него Jekyll съедает .pck и .wasm файлы
       - name: Add .nojekyll
