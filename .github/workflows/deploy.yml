@@ -1,0 +1,116 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "godot/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+# Нужны права на запись в gh-pages и Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# Один деплой за раз; новый пуш отменяет предыдущий запущенный
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.3"
+  GODOT_RELEASE: "stable"
+  BUILD_DIR: build
+
+jobs:
+  export-and-deploy:
+    name: Godot Web Export → GitHub Pages
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      # ── 2. Кэш: Godot бинарник + шаблоны ────────────────────────────────
+      - name: Cache Godot binaries
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: |
+            /usr/local/bin/godot
+            ~/.local/share/godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}-${{ env.GODOT_RELEASE }}
+
+      # ── 3. Установка Godot headless ───────────────────────────────────────
+      - name: Install Godot ${{ env.GODOT_VERSION }}
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          GODOT_FILENAME="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64"
+          wget -q \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${GODOT_FILENAME}.zip" \
+            -O godot.zip
+          unzip -q godot.zip
+          mv "${GODOT_FILENAME}" /usr/local/bin/godot
+          chmod +x /usr/local/bin/godot
+          godot --version
+
+      # ── 4. Установка шаблонов экспорта ───────────────────────────────────
+      - name: Install export templates
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          TEMPLATES_DIR=~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}
+          mkdir -p "$TEMPLATES_DIR"
+          wget -q \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_export_templates.tpz" \
+            -O templates.tpz
+          unzip -q templates.tpz
+          mv templates/* "$TEMPLATES_DIR/"
+          rm -rf templates templates.tpz
+
+      # ── 5. Импорт ресурсов (создаёт .godot/ кэш) ─────────────────────────
+      - name: Import project resources
+        run: |
+          cd godot
+          godot --headless --import 2>&1 || true
+          # Ждём завершения импорта
+          sleep 3
+
+      # ── 6. Web-экспорт ────────────────────────────────────────────────────
+      - name: Export Web build
+        run: |
+          mkdir -p ${{ env.BUILD_DIR }}
+          cd godot
+          godot --headless \
+            --export-release "Web" \
+            "$GITHUB_WORKSPACE/${{ env.BUILD_DIR }}/index.html" \
+            2>&1
+          echo "── Build files ──"
+          ls -lh "$GITHUB_WORKSPACE/${{ env.BUILD_DIR }}/"
+
+      # ── 7. COOP/COEP через coi-serviceworker (нужен для SharedArrayBuffer) ─
+      - name: Inject coi-serviceworker for GitHub Pages
+        run: |
+          # Скачиваем service worker, который добавляет нужные заголовки локально
+          curl -sSL \
+            "https://cdn.jsdelivr.net/gh/nicktindall/cyclon.html@main/coi-serviceworker.js" \
+            -o "${{ env.BUILD_DIR }}/coi-serviceworker.js"
+
+          # Инжектируем регистрацию SW в <head> перед любым другим скриптом
+          sed -i 's|</head>|<script src="coi-serviceworker.js"></script>\n</head>|' \
+            "${{ env.BUILD_DIR }}/index.html"
+
+      # ── 8. Деплой в gh-pages ─────────────────────────────────────────────
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./${{ env.BUILD_DIR }}
+          publish_branch: gh-pages
+          force_orphan: true          # gh-pages всегда чистый, без истории
+          commit_message: "Deploy ${{ github.sha }}"
+          cname: ""                   # Заполни если есть кастомный домен

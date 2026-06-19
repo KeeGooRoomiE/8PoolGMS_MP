@@ -1,0 +1,13 @@
+# Claude internal documents
+.claude/
+
+# Godot import cache (regenerates on first open)
+godot/.godot/
+godot/.import/
+
+# Build output
+build/
+
+# OS
+.DS_Store
+Thumbs.db
