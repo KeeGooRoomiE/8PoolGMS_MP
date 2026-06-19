@@ -1,6 +1,6 @@
 extends Node2D
 
-const MAX_FORCE   := 780.0
+const MAX_FORCE   := 1024.0
 const BALL_RADIUS := 26.0    # должно совпадать с ball.gd RADIUS
 const CUE_OFFSET  := 6.0     # зазор от края шара до кончика кия (в покое)
 const FORCE_SCALE := 0.9     # px мыши → единицы силы (дистанция / FORCE_SCALE = force)
