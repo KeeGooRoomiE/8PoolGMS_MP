@@ -1,8 +1,8 @@
 extends Node2D
 
-const MAX_FORCE   := 550.0
-const CUE_OFFSET  := 36.0    # расстояние от центра шара до торца кия
-const FORCE_SCALE := 6.0     # px мышки → единицы силы
+const MAX_FORCE   := 600.0
+const CUE_OFFSET  := 40.0    # расстояние от центра шара до торца кия (в покое)
+const FORCE_SCALE := 0.9     # px мыши → единицы силы (дистанция / FORCE_SCALE = force)
 const CUE_LENGTH  := 200.0
 const CUE_WIDTH   := 7.0
 
@@ -48,16 +48,19 @@ func _process(_delta: float) -> void:
 	var pull      := minf(ball_pos.distance_to(mouse_pos) / FORCE_SCALE, MAX_FORCE)
 	_shot_force   = pull
 
-	# Позиция и поворот кия
+	# dir_vec: от шара к мыши = направление удара
 	var dir_vec := Vector2.from_angle(deg_to_rad(_shot_dir_deg))
-	global_position = ball_pos + dir_vec * (CUE_OFFSET + pull * 0.12)
-	rotation = deg_to_rad(_shot_dir_deg + 180.0)
 
-	# Линия прицела
+	# Кий позади шара (противоположная сторона от мыши)
+	global_position = ball_pos - dir_vec * (CUE_OFFSET + pull * 0.15)
+	# Кончик кия (local 0,0) смотрит в сторону шара → rotation = shot_dir
+	rotation = deg_to_rad(_shot_dir_deg)
+
+	# Линия прицела: от шара вперёд по направлению удара
 	aim_line.global_position = ball_pos
 	aim_line.clear_points()
 	aim_line.add_point(Vector2.ZERO)
-	aim_line.add_point(-dir_vec * 320.0)
+	aim_line.add_point(dir_vec * 350.0)
 
 	queue_redraw()
 

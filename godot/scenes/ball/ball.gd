@@ -28,8 +28,8 @@ var _pocketed: bool = false
 func _ready() -> void:
 	add_to_group("balls")
 	gravity_scale = 0.0
-	linear_damp = 1.2
-	angular_damp = 1.5
+	linear_damp = 0.45
+	angular_damp = 1.0
 	contact_monitor = true
 	max_contacts_reported = 4
 
