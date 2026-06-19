@@ -1,10 +1,8 @@
-[gd_scene load_steps=12 format=3 uid="uid://cgametable8pool"]
+[gd_scene load_steps=11 format=3 uid="uid://cgametable8pool"]
 
 [ext_resource type="Script" path="res://scripts/table_controller.gd" id="1_table"]
 [ext_resource type="PackedScene" path="res://scenes/cue/cue.tscn" id="2_cue"]
-[ext_resource type="PackedScene" path="res://scenes/pocket/pocket.tscn" id="3_pocket"]
 [ext_resource type="Script" path="res://scripts/debug_console.gd" id="4_debug"]
-[ext_resource type="Texture2D" path="res://assets/sprites/bkg_pool_table.png" id="5_bkg"]
 
 [sub_resource type="RectangleShape2D" id="Wall_H"]
 size = Vector2(1140, 16)
@@ -22,9 +20,13 @@ radius = 28.0
 [node name="GameTable" type="Node2D"]
 script = ExtResource("1_table")
 
-[node name="Background" type="Sprite2D" parent="."]
-position = Vector2(640, 360)
-texture = ExtResource("5_bkg")
+[node name="Background" type="ColorRect" parent="."]
+color = Color(0.07, 0.38, 0.12)
+offset_left = 50.0
+offset_top = 65.0
+offset_right = 1230.0
+offset_bottom = 655.0
+z_index = -10
 
 [node name="Walls" type="Node2D" parent="."]
 
@@ -138,8 +140,11 @@ text = "8-Ball Pool"
 placeholder_text = "ws://localhost:7777"
 text = "ws://localhost:7777"
 
-[node name="ConnectButton" type="Button" parent="HUD/ConnectionPanel/VBox"]
-text = "Connect"
+[node name="BtnConnect" type="Button" parent="HUD/ConnectionPanel/VBox"]
+text = "Подключиться"
+
+[node name="BtnSolo" type="Button" parent="HUD/ConnectionPanel/VBox"]
+text = "Соло (офлайн)"
 
 [node name="StatusLabel" type="Label" parent="HUD/ConnectionPanel/VBox"]
 horizontal_alignment = 1

@@ -5,16 +5,7 @@
 [node name="Cue" type="Node2D"]
 script = ExtResource("1_cue")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-
 [node name="AimLine" type="Line2D" parent="."]
-default_color = Color(0.3, 0.7, 1, 0.45)
-width = 2.0
+default_color = Color(0.3, 0.75, 1, 0.4)
+width = 1.5
 antialiased = true
-
-[node name="ForceBar" type="TextureProgressBar" parent="."]
-offset_left = -40.0
-offset_top = -80.0
-offset_right = 40.0
-offset_bottom = -60.0
-fill_mode = 0

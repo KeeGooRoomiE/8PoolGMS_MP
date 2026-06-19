@@ -1,5 +1,8 @@
 extends Node
 
+# --- Mode ---
+var is_solo: bool = false
+
 # --- Player state ---
 var players_list: Array[int] = []
 var player_turn: int = 0
