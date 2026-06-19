@@ -53,6 +53,10 @@ func _ready() -> void:
 	btn_solo.pressed.connect(_on_solo_pressed)
 	conn_panel.show()
 
+	# В браузере сервера нет — сразу запускаем соло
+	if OS.get_name() == "Web":
+		call_deferred("_on_solo_pressed")
+
 	# Подключаем Area2D луз к обработчику
 	for pocket in $Pockets.get_children():
 		if pocket is Area2D:
