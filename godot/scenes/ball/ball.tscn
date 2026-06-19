@@ -1,0 +1,26 @@
+[gd_scene load_steps=3 format=3 uid="uid://cball8pool"]
+
+[ext_resource type="Script" path="res://scenes/ball/ball.gd" id="1_ball"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ball"]
+radius = 32.0
+
+[node name="Ball" type="RigidBody2D"]
+gravity_scale = 0.0
+script = ExtResource("1_ball")
+
+[node name="SpriteShadow" type="Sprite2D" parent="."]
+position = Vector2(5, 5)
+modulate = Color(0, 0, 0, 0.25)
+z_index = -1
+
+[node name="SpriteBase" type="Sprite2D" parent="."]
+
+[node name="SpriteStripe" type="Sprite2D" parent="."]
+visible = false
+
+[node name="SpriteHighlight" type="Sprite2D" parent="."]
+modulate = Color(1, 1, 1, 0.4)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_ball")

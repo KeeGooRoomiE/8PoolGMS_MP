@@ -1,0 +1,12 @@
+[gd_scene load_steps=3 format=3 uid="uid://cpocket8pool"]
+
+[ext_resource type="Script" path="res://scenes/pocket/pocket.gd" id="1_pocket"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_pocket"]
+radius = 28.0
+
+[node name="Pocket" type="Area2D"]
+script = ExtResource("1_pocket")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_pocket")

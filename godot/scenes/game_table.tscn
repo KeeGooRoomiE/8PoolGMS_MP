@@ -1,0 +1,160 @@
+[gd_scene load_steps=12 format=3 uid="uid://cgametable8pool"]
+
+[ext_resource type="Script" path="res://scripts/table_controller.gd" id="1_table"]
+[ext_resource type="PackedScene" path="res://scenes/cue/cue.tscn" id="2_cue"]
+[ext_resource type="PackedScene" path="res://scenes/pocket/pocket.tscn" id="3_pocket"]
+[ext_resource type="Script" path="res://scripts/debug_console.gd" id="4_debug"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bkg_pool_table.png" id="5_bkg"]
+
+[sub_resource type="RectangleShape2D" id="Wall_H"]
+size = Vector2(1140, 16)
+
+[sub_resource type="RectangleShape2D" id="Wall_V"]
+size = Vector2(16, 620)
+
+[sub_resource type="PhysicsMaterial" id="WallMat"]
+bounce = 0.85
+friction = 0.04
+
+[sub_resource type="CircleShape2D" id="PocketShape"]
+radius = 28.0
+
+[node name="GameTable" type="Node2D"]
+script = ExtResource("1_table")
+
+[node name="Background" type="Sprite2D" parent="."]
+position = Vector2(640, 360)
+texture = ExtResource("5_bkg")
+
+[node name="Walls" type="Node2D" parent="."]
+
+[node name="WallTop" type="StaticBody2D" parent="Walls"]
+position = Vector2(640, 62)
+physics_material_override = SubResource("WallMat")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallTop"]
+shape = SubResource("Wall_H")
+
+[node name="WallBottom" type="StaticBody2D" parent="Walls"]
+position = Vector2(640, 658)
+physics_material_override = SubResource("WallMat")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallBottom"]
+shape = SubResource("Wall_H")
+
+[node name="WallLeft" type="StaticBody2D" parent="Walls"]
+position = Vector2(42, 360)
+physics_material_override = SubResource("WallMat")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallLeft"]
+shape = SubResource("Wall_V")
+
+[node name="WallRight" type="StaticBody2D" parent="Walls"]
+position = Vector2(1238, 360)
+physics_material_override = SubResource("WallMat")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls/WallRight"]
+shape = SubResource("Wall_V")
+
+[node name="Pockets" type="Node2D" parent="."]
+
+[node name="PocketTL" type="Area2D" parent="Pockets"]
+position = Vector2(52, 72)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Pockets/PocketTL"]
+shape = SubResource("PocketShape")
+
+[node name="PocketTC" type="Area2D" parent="Pockets"]
+position = Vector2(640, 54)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Pockets/PocketTC"]
+shape = SubResource("PocketShape")
+
+[node name="PocketTR" type="Area2D" parent="Pockets"]
+position = Vector2(1228, 72)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Pockets/PocketTR"]
+shape = SubResource("PocketShape")
+
+[node name="PocketBL" type="Area2D" parent="Pockets"]
+position = Vector2(52, 648)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Pockets/PocketBL"]
+shape = SubResource("PocketShape")
+
+[node name="PocketBC" type="Area2D" parent="Pockets"]
+position = Vector2(640, 666)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Pockets/PocketBC"]
+shape = SubResource("PocketShape")
+
+[node name="PocketBR" type="Area2D" parent="Pockets"]
+position = Vector2(1228, 648)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Pockets/PocketBR"]
+shape = SubResource("PocketShape")
+
+[node name="Balls" type="Node2D" parent="."]
+
+[node name="Cue" type="Node2D" parent="." instance=ExtResource("2_cue")]
+
+[node name="AllBallsStoppedTimer" type="Timer" parent="."]
+wait_time = 0.6
+one_shot = true
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="TurnLabel" type="Label" parent="HUD"]
+offset_left = 490.0
+offset_top = 8.0
+offset_right = 790.0
+offset_bottom = 40.0
+horizontal_alignment = 1
+text = "Connecting..."
+
+[node name="PlayersContainer" type="VBoxContainer" parent="HUD"]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 200.0
+offset_bottom = 120.0
+
+[node name="ConnectionPanel" type="PanelContainer" parent="HUD"]
+offset_left = 440.0
+offset_top = 260.0
+offset_right = 840.0
+offset_bottom = 460.0
+
+[node name="VBox" type="VBoxContainer" parent="HUD/ConnectionPanel"]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 392.0
+offset_bottom = 192.0
+
+[node name="Title" type="Label" parent="HUD/ConnectionPanel/VBox"]
+horizontal_alignment = 1
+text = "8-Ball Pool"
+
+[node name="ServerUrlEdit" type="LineEdit" parent="HUD/ConnectionPanel/VBox"]
+placeholder_text = "ws://localhost:7777"
+text = "ws://localhost:7777"
+
+[node name="ConnectButton" type="Button" parent="HUD/ConnectionPanel/VBox"]
+text = "Connect"
+
+[node name="StatusLabel" type="Label" parent="HUD/ConnectionPanel/VBox"]
+horizontal_alignment = 1
+text = ""
+
+[node name="DebugConsole" type="CanvasLayer" parent="."]
+layer = 100
+script = ExtResource("4_debug")
+
+[node name="Panel" type="PanelContainer" parent="DebugConsole"]
+offset_left = 8.0
+offset_top = 380.0
+offset_right = 640.0
+offset_bottom = 714.0
+
+[node name="RichTextLabel" type="RichTextLabel" parent="DebugConsole/Panel"]
+custom_minimum_size = Vector2(630, 330)
+scroll_following = true
