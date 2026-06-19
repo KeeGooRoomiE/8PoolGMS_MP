@@ -23,7 +23,6 @@ env:
   BUILD_DIR: build
 
 jobs:
-  # ── Job 1: Собрать Web-экспорт ──────────────────────────────────────────
   build:
     name: Godot Web Export
     runs-on: ubuntu-latest
@@ -53,6 +52,7 @@ jobs:
           unzip -q godot.zip
           mv "${FILENAME}" /usr/local/bin/godot
           chmod +x /usr/local/bin/godot
+          godot --version
 
       - name: Install export templates
         if: steps.cache-godot.outputs.cache-hit != 'true'
@@ -66,35 +66,51 @@ jobs:
           mv templates/* "$TEMPLATES_DIR/"
           rm -rf templates templates.tpz
 
+      # Правильная команда импорта для Godot 4: --editor --quit-after
       - name: Import project resources
         run: |
-          cd godot
-          godot --headless --import 2>&1 || true
-          sleep 3
+          godot --headless --editor --quit-after 60 --path "$GITHUB_WORKSPACE/godot" 2>&1 || true
+          sleep 5
 
       - name: Export Web build
         run: |
           mkdir -p ${{ env.BUILD_DIR }}
-          cd godot
           godot --headless \
             --export-release "Web" \
-            "$GITHUB_WORKSPACE/${{ env.BUILD_DIR }}/index.html"
+            "$GITHUB_WORKSPACE/${{ env.BUILD_DIR }}/index.html" \
+            --path "$GITHUB_WORKSPACE/godot"
+          echo "── Build output ──"
           ls -lh "$GITHUB_WORKSPACE/${{ env.BUILD_DIR }}/"
 
-      - name: Inject coi-serviceworker (SharedArrayBuffer на Pages)
+      # gzuidhof/coi-serviceworker — стандартный инструмент для COOP/COEP на Pages
+      - name: Add coi-serviceworker (SharedArrayBuffer support)
         run: |
           curl -sSL \
-            "https://cdn.jsdelivr.net/gh/nicktindall/cyclon.html@main/coi-serviceworker.js" \
+            "https://raw.githubusercontent.com/gzuidhof/coi-serviceworker/master/coi-serviceworker.js" \
             -o "${{ env.BUILD_DIR }}/coi-serviceworker.js"
-          sed -i 's|</head>|<script src="coi-serviceworker.js"></script>\n</head>|' \
-            "${{ env.BUILD_DIR }}/index.html"
+          # Инжектируем перед </head>
+          python3 - <<'EOF'
+import sys
+path = "${{ env.BUILD_DIR }}/index.html"
+with open(path, "r") as f:
+    html = f.read()
+tag = '<script src="coi-serviceworker.js"></script>'
+if tag not in html:
+    html = html.replace("</head>", tag + "\n</head>", 1)
+with open(path, "w") as f:
+    f.write(html)
+print("coi-serviceworker injected")
+EOF
+
+      # .nojekyll — без него Jekyll съедает .pck и .wasm файлы
+      - name: Add .nojekyll
+        run: touch "${{ env.BUILD_DIR }}/.nojekyll"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3.0.1
         with:
           path: ./${{ env.BUILD_DIR }}
 
-  # ── Job 2: Задеплоить на GitHub Pages ───────────────────────────────────
   deploy:
     name: Deploy to GitHub Pages
     needs: build
