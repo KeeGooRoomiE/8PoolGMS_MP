@@ -18,6 +18,11 @@ const BALL_TYPE_MAP: Dictionary = {
 }
 const WHITE_SPAWN := Vector2(320.0, 360.0)
 
+const _POCKET_POSITIONS: Array[Vector2] = [
+	Vector2(52, 72), Vector2(640, 54), Vector2(1228, 72),
+	Vector2(52, 648), Vector2(640, 666), Vector2(1228, 648),
+]
+
 # Ноды
 @onready var balls_node:    Node2D          = $Balls
 @onready var cue:           Node2D          = $Cue
@@ -61,6 +66,24 @@ func _ready() -> void:
 	for pocket in $Pockets.get_children():
 		if pocket is Area2D:
 			pocket.body_entered.connect(_on_ball_pocketed.bind(pocket))
+
+	queue_redraw()
+
+# ---------------------------------------------------------------------------
+# Стол: бортики и лузы
+# ---------------------------------------------------------------------------
+
+func _draw() -> void:
+	var bumper_col := Color(0.35, 0.22, 0.05)
+	var pocket_col := Color(0.04, 0.04, 0.04)
+
+	for pos in _POCKET_POSITIONS:
+		draw_circle(pos, 30.0, pocket_col)
+
+	draw_rect(Rect2(70,   54,  1140, 16), bumper_col)  # top
+	draw_rect(Rect2(70,  650,  1140, 16), bumper_col)  # bottom
+	draw_rect(Rect2(34,   50,    16, 620), bumper_col)  # left
+	draw_rect(Rect2(1230,  50,   16, 620), bumper_col)  # right
 
 # ---------------------------------------------------------------------------
 # Ввод
@@ -181,9 +204,9 @@ func _on_solo_pressed() -> void:
 	GameState.add_player(1)
 	GameState.can_local_player_move = true
 	conn_panel.hide()
+	turn_label.hide()
+	players_vbox.hide()
 	_spawn_all_balls()
-	turn_label.text = "Соло — твой ход!"
-	turn_label.modulate = Color.GREEN
 
 func _on_net_connected() -> void:
 	conn_panel.hide()

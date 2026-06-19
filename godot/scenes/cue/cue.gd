@@ -1,7 +1,8 @@
 extends Node2D
 
-const MAX_FORCE   := 600.0
-const CUE_OFFSET  := 40.0    # расстояние от центра шара до торца кия (в покое)
+const MAX_FORCE   := 780.0
+const BALL_RADIUS := 26.0    # должно совпадать с ball.gd RADIUS
+const CUE_OFFSET  := 6.0     # зазор от края шара до кончика кия (в покое)
 const FORCE_SCALE := 0.9     # px мыши → единицы силы (дистанция / FORCE_SCALE = force)
 const CUE_LENGTH  := 200.0
 const CUE_WIDTH   := 7.0
@@ -51,13 +52,15 @@ func _process(_delta: float) -> void:
 	# dir_vec: от шара к мыши = направление удара
 	var dir_vec := Vector2.from_angle(deg_to_rad(_shot_dir_deg))
 
-	# Кий позади шара (противоположная сторона от мыши)
-	global_position = ball_pos - dir_vec * (CUE_OFFSET + pull * 0.15)
-	# Кончик кия (local 0,0) смотрит в сторону шара → rotation = shot_dir
-	rotation = deg_to_rad(_shot_dir_deg)
+	# Кий позади шара — кончик у края шара, рукоять уходит назад
+	global_position = ball_pos - dir_vec * (BALL_RADIUS + CUE_OFFSET + pull * 0.15)
+	# +180°: local +X смотрит от шара, поэтому трапеция (0→CUE_LENGTH) рисуется назад
+	rotation = deg_to_rad(_shot_dir_deg + 180.0)
 
 	# Линия прицела: от шара вперёд по направлению удара
+	# global_rotation = 0 нейтрализует поворот родителя (иначе dir_vec повернётся дважды)
 	aim_line.global_position = ball_pos
+	aim_line.global_rotation = 0.0
 	aim_line.clear_points()
 	aim_line.add_point(Vector2.ZERO)
 	aim_line.add_point(dir_vec * 350.0)
@@ -67,12 +70,12 @@ func _process(_delta: float) -> void:
 func _draw() -> void:
 	if not is_aiming:
 		return
-	# Кий: прямоугольник, сужается к концу
+	# Кий: трапеция — тонкий кончик у (0,0) → толстая рукоять у (CUE_LENGTH, 0)
+	# После rotation +180° кончик окажется у шара, рукоять — сзади
 	var t := _shot_force / MAX_FORCE
 	var tip_w := CUE_WIDTH * 0.35
 	var col := Color(0.75, 0.55, 0.25).lerp(Color(1.0, 0.3, 0.1), t)
 
-	# Рисуем трапецию как два треугольника (по локальным осям)
 	var pts := PackedVector2Array([
 		Vector2(0.0,       -tip_w * 0.5),
 		Vector2(0.0,        tip_w * 0.5),
@@ -88,7 +91,6 @@ func shoot() -> void:
 		return
 
 	if GameState.is_solo:
-		# Офлайн: применяем силу напрямую
 		target_ball.apply_shot(_shot_force, _shot_dir_deg)
 	else:
 		NetworkManager.rpc_request_shot.rpc_id(1, _shot_force, _shot_dir_deg, target_ball.ball_id)

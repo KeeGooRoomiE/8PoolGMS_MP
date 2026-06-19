@@ -5,10 +5,11 @@ const MAX_LINES := 18
 @onready var label: RichTextLabel = $Panel/RichTextLabel
 
 var _lines: PackedStringArray = []
-var _visible: bool = true
+var _visible: bool = false
 
 func _ready() -> void:
 	layer = 100
+	$Panel.hide()
 
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("debug_toggle"):
