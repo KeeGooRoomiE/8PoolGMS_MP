@@ -16,11 +16,17 @@ var selected_ball: RigidBody2D = null
 enum Phase { LOBBY, WAITING_FOR_PLAYERS, PLAYING, GAME_OVER }
 var phase: Phase = Phase.LOBBY
 
+# --- 8-ball rules ---
+var player_groups: Dictionary = {}          # pid → 2 (solid) or 3 (stripe)
+var pocketed_by_type: Dictionary = {2: 0, 3: 0}
+var groups_assigned: bool = false
+
 # --- Signals ---
 signal turn_changed(active_player_id: int)
 signal player_joined(player_id: int)
 signal player_left(player_id: int)
 signal phase_changed(new_phase: Phase)
+signal game_over(winner_id: int)
 
 # ---------------------------------------------------------------------------
 func add_player(player_id: int) -> void:
@@ -30,7 +36,6 @@ func add_player(player_id: int) -> void:
 
 func remove_player(player_id: int) -> void:
 	players_list.erase(player_id)
-	# Keep turn index in bounds
 	if not players_list.is_empty():
 		player_turn = player_turn % players_list.size()
 	else:
@@ -67,3 +72,37 @@ func _refresh_local_move_permission() -> void:
 func set_phase(new_phase: Phase) -> void:
 	phase = new_phase
 	phase_changed.emit(new_phase)
+
+# ---------------------------------------------------------------------------
+# 8-ball game rules
+# ---------------------------------------------------------------------------
+
+func reset_rules() -> void:
+	player_groups.clear()
+	pocketed_by_type = {2: 0, 3: 0}
+	groups_assigned = false
+
+func my_group(pid: int) -> int:
+	return player_groups.get(pid, 0)
+
+func all_balls_in_for(pid: int) -> bool:
+	var g := my_group(pid)
+	if g == 0:
+		return false
+	return pocketed_by_type.get(g, 0) >= 7
+
+func can_pocket_eight(pid: int) -> bool:
+	if is_solo:
+		# Solo: cleared either all solids or all stripes
+		return pocketed_by_type.get(2, 0) >= 7 or pocketed_by_type.get(3, 0) >= 7
+	return groups_assigned and all_balls_in_for(pid)
+
+func assign_groups(ball_type: int, pid: int) -> void:
+	if groups_assigned:
+		return
+	groups_assigned = true
+	player_groups[pid] = ball_type
+	var other := 3 if ball_type == 2 else 2
+	for p in players_list:
+		if p != pid and p not in player_groups:
+			player_groups[p] = other

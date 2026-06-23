@@ -39,6 +39,11 @@ var _ball_scene: PackedScene = preload("res://scenes/ball/ball.tscn")
 var _waiting_stop: bool = false
 var _sync_tick: int = 0
 
+# Буфер событий за текущий ход (сбрасывается в _reset_turn_tracking)
+var _turn_pocketed_types: Array[int] = []
+var _turn_white_in: bool = false
+var _turn_eight_in: bool = false
+
 # ---------------------------------------------------------------------------
 func _ready() -> void:
 	GameState.turn_changed.connect(_on_turn_changed)
@@ -128,11 +133,127 @@ func _check_balls_stopped() -> void:
 	stop_timer.start()
 
 func _on_stop_timer() -> void:
-	if GameState.is_solo:
-		# В соло-режиме просто разрешаем следующий удар
-		GameState.can_local_player_move = true
+	var pid := GameState.current_player_id()
+
+	# --- Восьмёрка в лузе: конец игры ---
+	if _turn_eight_in:
+		if _turn_white_in or not GameState.can_pocket_eight(pid):
+			_end_game_lose(pid)
+		else:
+			_end_game_win(pid)
+		_reset_turn_tracking()
+		return
+
+	# --- Фол (белый в лузе без восьмёрки) ---
+	if _turn_white_in:
+		_show_toast("Фол!", Color(1.0, 0.35, 0.1))
+		if GameState.is_solo:
+			GameState.can_local_player_move = true
+		else:
+			GameState.next_turn()
+			NetworkManager.rpc_set_turn.rpc(GameState.player_turn)
+		_reset_turn_tracking()
+		return
+
+	# --- Назначаем группы при первом пополнении ---
+	if not _turn_pocketed_types.is_empty() and not GameState.groups_assigned:
+		GameState.assign_groups(_turn_pocketed_types[0], pid)
+
+	# --- Продолжение / смена хода ---
+	if not _turn_pocketed_types.is_empty():
+		# Есть пополнение → продолжает тот же игрок
+		if GameState.is_solo:
+			GameState.can_local_player_move = true
+		else:
+			GameState.can_local_player_move = GameState.is_local_turn()
 	else:
-		NetworkManager.rpc_report_balls_stopped.rpc_id(1)
+		# Нет пополнения → смена хода
+		if GameState.is_solo:
+			# В соло противника нет — просто даём следующий удар
+			GameState.can_local_player_move = true
+		else:
+			GameState.next_turn()
+			NetworkManager.rpc_set_turn.rpc(GameState.player_turn)
+
+	_reset_turn_tracking()
+
+func _reset_turn_tracking() -> void:
+	_turn_pocketed_types.clear()
+	_turn_white_in = false
+	_turn_eight_in = false
+
+# ---------------------------------------------------------------------------
+# Конец игры
+# ---------------------------------------------------------------------------
+
+func _end_game_win(pid: int) -> void:
+	GameState.can_local_player_move = false
+	var is_local := pid == GameState.local_player_id
+	_show_overlay(
+		"Победа!" if is_local else "Игрок %d победил!" % pid,
+		Color(0.2, 0.9, 0.3)
+	)
+
+func _end_game_lose(pid: int) -> void:
+	GameState.can_local_player_move = false
+	var is_local := pid == GameState.local_player_id
+	_show_overlay(
+		"Поражение!\n8-шар забит досрочно." if is_local else "Игрок %d проиграл!" % pid,
+		Color(0.9, 0.2, 0.2)
+	)
+
+# ---------------------------------------------------------------------------
+# HUD: тосты и оверлей конца игры
+# ---------------------------------------------------------------------------
+
+func _show_toast(text: String, color: Color) -> void:
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.add_theme_font_size_override("font_size", 30)
+	lbl.modulate = color
+	lbl.position = Vector2(560, 300)
+	$HUD.add_child(lbl)
+	var tween := create_tween()
+	tween.tween_interval(1.2)
+	tween.tween_property(lbl, "modulate:a", 0.0, 0.6)
+	tween.tween_callback(lbl.queue_free)
+
+func _show_overlay(text: String, color: Color) -> void:
+	var vp := get_viewport().get_visible_rect().size
+
+	var bg := ColorRect.new()
+	bg.color = Color(0, 0, 0, 0.7)
+	bg.position = Vector2.ZERO
+	bg.size = vp
+	$HUD.add_child(bg)
+
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.add_theme_font_size_override("font_size", 40)
+	lbl.modulate = color
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
+	lbl.size = Vector2(600, 120)
+	lbl.position = vp / 2.0 - Vector2(300, 90)
+	$HUD.add_child(lbl)
+
+	var btn := Button.new()
+	btn.text = "Начать заново"
+	btn.size = Vector2(240, 48)
+	btn.position = vp / 2.0 - Vector2(120, -50)
+	$HUD.add_child(btn)
+	btn.pressed.connect(func():
+		bg.queue_free()
+		lbl.queue_free()
+		btn.queue_free()
+		_restart_game()
+	)
+
+func _restart_game() -> void:
+	GameState.reset_rules()
+	_reset_turn_tracking()
+	GameState.can_local_player_move = true
+	_spawn_all_balls()
 
 # ---------------------------------------------------------------------------
 # Спавн
@@ -141,6 +262,9 @@ func _on_stop_timer() -> void:
 func _spawn_all_balls() -> void:
 	for child in balls_node.get_children():
 		child.queue_free()
+
+	GameState.reset_rules()
+	_reset_turn_tracking()
 
 	var white := _make_ball(0, WHITE_SPAWN, 1)
 	balls_node.add_child(white)
@@ -164,10 +288,23 @@ func _make_ball(bid: int, pos: Vector2, btype: int) -> RigidBody2D:
 func _on_ball_pocketed(body: Node2D, pocket: Area2D) -> void:
 	if not body.is_in_group("balls"):
 		return
+
+	# Физика: скрыть/респавн шара
 	if GameState.is_solo:
 		body.on_pocketed(pocket.get_index())
 	elif multiplayer.is_server():
 		NetworkManager.rpc_ball_pocketed.rpc(body.ball_id, pocket.get_index())
+
+	# Учёт для правил текущего хода
+	match body.ball_type:
+		1:  # белый
+			_turn_white_in = true
+		4:  # восьмёрка
+			_turn_eight_in = true
+		_:  # солид или страйп
+			_turn_pocketed_types.append(body.ball_type)
+			GameState.pocketed_by_type[body.ball_type] = \
+				GameState.pocketed_by_type.get(body.ball_type, 0) + 1
 
 # ---------------------------------------------------------------------------
 # Синхронизация (только сервер, только сетевой режим)
@@ -213,7 +350,7 @@ func _on_net_connected() -> void:
 	_refresh_hud()
 
 # ---------------------------------------------------------------------------
-# HUD
+# HUD (мультиплеер)
 # ---------------------------------------------------------------------------
 
 func _on_turn_changed(pid: int) -> void:
